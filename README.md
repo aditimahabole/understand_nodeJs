@@ -631,6 +631,11 @@
 ![image](https://github.com/aditimahabole/understand_nodeJs/assets/78752342/ef6e9cf7-63e7-4195-b675-df4f36c8e946)
 
 
+# Difference between Nodejs and other Multithreaded Programming Languages
+![image](https://github.com/aditimahabole/understand_nodeJs/assets/78752342/d261ebe5-2677-4e88-8559-48da7dcf9b17)
+
+
+
 
 
 
