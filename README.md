@@ -13,10 +13,10 @@
 + CPU intensive works are Hashing , Encryption , Crypto related
 + Number of threads can be controlled by "process.env.UV_THREADPOOL_SIZE"
 #### ------Inside Node Process----
-+ Top Level code
-+ Modules are required 
-+ Event callbacks are registered
-+ Then Event Loop Runs 
++ Top Level code line console.log() , const a = 10 re run
++ Require Modules are then run
++ Event callbacks are registered like SetTimeout , SetImmediate , IO Polling (reading file / writing file)
++ Then Event Loop Starts
 #### ------Inside Event Loop----
 + First Expired setTimeouts are run 
 + then IO polling runs 
