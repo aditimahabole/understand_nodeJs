@@ -1,6 +1,29 @@
 # Node Js Working 
-
 ![image](https://github.com/aditimahabole/understand_nodeJs/assets/78752342/f62e4c90-e037-4bc2-b074-6c18a39b207c)
+# ------Node Js Components -------
++ V8 : 
++ We have V8 engine which helps to execute Javascript file , It is present in Chrome browser and is fast
++ V8 is made up of C++ and JS
++ UVlib :
++ This library that implements  Event Loops and Thread pool
+#### ------Components of Node Process----
++ Main thread :  non CPU intensive work is evecuted on this thread
++ Thread pool :  consisting of 4 threads by default
++ These threads are used by CPU intensive works
++ CPU intensive works are Hashing , Encryption , Crypto related
++ Number of threads can be controlled by "process.env.UV_THREADPOOL_SIZE"
+#### ------Inside Node Process----
++ Top Level code
++ Modules are required 
++ Event callbacks are registered
++ Then Event Loop Runs 
+#### ------Inside Event Loop----
++ First Expired setTimeouts are run 
++ then IO polling runs 
++ then setImmediate callbacks run
++ then close callbacks run 
++ event loop checks is there any pending function left
++ If yes then it executes them else it exits
 
 # Code 1
 
@@ -178,9 +201,8 @@
 + setImmediate is run then
 + then after file reading is done then IO polling printed
 + now this has 4 functions setTimeout of 2s , 5s , 0s and an setImmediate function
-+ now as we know that setImmediate inside this is not bounded by IO pollling ok?!
-+ so we cannot determine which will run first setTimeout of 0s or setImmediate
-+ my output is first setImmediate
++ now as we know that setImmediate inside this is bounded by IO polling ok?!
++ so setImmediate runs first
 + then setTimeout of 0s
 + then setTimeout of 2s
 + then setTimeout of 5s
@@ -283,6 +305,336 @@
 + I ran code once again and now this time output of CPU intensive is different
 + They are running concurrently and the one who gets resources first and completes first is printed
 ![image](https://github.com/aditimahabole/understand_nodeJs/assets/78752342/05adbda0-cd5b-4521-95f3-4e730ad8bb6b)
+
+# Code 10
+    const fs = require("fs");
+    const crypto = require('crypto')
+    const { red, blue, green, yellow, magenta, cyan, greenBright, yellowBright, bgYellowBright, bgBlue, bgCyan, bgGreenBright, 
+    bgRedBright, bgMagenta } = require("colorette");
+    const start = Date.now()
+    setTimeout(() => console.log(green("Hi from SetTimeout 1 0s")), 0);
+    setImmediate(() => console.log(blue("Hey setImmediate 1 function here")));
+    fs.readFile("sample.txt", "utf-8", () => {
+        console.log(yellow("IO Polling Finished"));
+        setImmediate(()=>console.log(greenBright("Hi from SetImmediate 2 inside Readfile")))
+        setTimeout(() => {
+          console.log(magenta("Hi from SetTimeout 2 inside Readfile 1s"));
+        }, 1000);
+        setTimeout(() => {
+          console.log(cyan("Hi from SetTimeout 3 inside Readfile 2s"));
+        }, 2000);
+        setTimeout(() => {
+            console.log(yellowBright("Hi from SetTimeout 4 inside Readfile 0s"));
+          }, 0);
+    
+          // CPU intensive work to show Threading work 
+          // performed in Thread Pool
+          crypto.pbkdf2('mypassword1','mysalt1',100000,1024,'sha512',()=>{
+            console.log(bgYellowBright(`password 1 Done took ${Date.now() - start}s`))
+          })
+    
+          crypto.pbkdf2('mypassword2','mysalt1',100000,1024,'sha512',()=>{
+            console.log(bgBlue(`password 2 Done took ${Date.now() - start}s`))
+          })
+    
+          crypto.pbkdf2('mypassword3','mysalt1',100000,1024,'sha512',()=>{
+            console.log(bgMagenta(`password 3 Done took ${Date.now() - start}s`))
+          })
+    
+          crypto.pbkdf2('mypassword4','mysalt1',100000,1024,'sha512',()=>{
+            console.log(bgRedBright(`password 4 Done took ${Date.now() - start}s`))
+          })
+        //    Adding one more cpu intensive 
+        // Thread pool has 4 threads so lets see what happens with 5th work
+        crypto.pbkdf2('mypassword5','mysalt1',100000,1024,'sha512',()=>{
+            console.log(bgCyan(`password 5 Done took ${Date.now() - start}s`))
+          })
+      });
+    console.log(red("Hi Top Level Code"));
+
+### Output
++ In this code I have added 5th CPU intensive work
++ So this 5th crypto function will not get thread
++ it has to wait for thread to get free
++ as a result it will execute afte one of thread is free
+
+
+
+
+![image](https://github.com/aditimahabole/understand_nodeJs/assets/78752342/32a82288-f491-4ef0-a210-f4305cde665b)
+
++ I ran code again and this time also 5th password comes last as it does not get thread
++ It will execute when a thread gets free so you can see its time is way more than above 4 passwords
+
+![image](https://github.com/aditimahabole/understand_nodeJs/assets/78752342/d0de62bc-091d-409e-973d-3343bc4ef2fb)
+
+# Code 11
+    const fs = require("fs");
+    const crypto = require('crypto')
+    const { red, blue, green, yellow, magenta, cyan, greenBright, yellowBright, bgYellowBright, bgBlue, bgCyan, bgGreenBright, bgRedBright, bgMagenta, bgGreen } = require("colorette");
+    const start = Date.now()
+    setTimeout(() => console.log(green("Hi from SetTimeout 1 0s")), 0);
+    setImmediate(() => console.log(blue("Hey setImmediate 1 function here")));
+    fs.readFile("sample.txt", "utf-8", () => {
+        console.log(yellow("IO Polling Finished"));
+        setImmediate(()=>console.log(greenBright("Hi from SetImmediate 2 inside Readfile")))
+        setTimeout(() => {
+          console.log(magenta("Hi from SetTimeout 2 inside Readfile 1s"));
+        }, 1000);
+        setTimeout(() => {
+          console.log(cyan("Hi from SetTimeout 3 inside Readfile 2s"));
+        }, 2000);
+        setTimeout(() => {
+            console.log(yellow("Hi from SetTimeout 5 inside Readfile 5s"));
+          }, 5000);
+        setTimeout(() => {
+            console.log(yellowBright("Hi from SetTimeout 4 inside Readfile 0s"));
+          }, 0);
+    
+          // CPU intensive work to show Threading work 
+          // performed in Thread Pool
+          crypto.pbkdf2('mypassword1','mysalt1',100000,1024,'sha512',()=>{
+            console.log(bgYellowBright(`password 1 Done took ${Date.now() - start}s`))
+          })
+    
+          crypto.pbkdf2('mypassword2','mysalt1',100000,1024,'sha512',()=>{
+            console.log(bgBlue(`password 2 Done took ${Date.now() - start}s`))
+          })
+    
+          crypto.pbkdf2('mypassword3','mysalt1',100000,1024,'sha512',()=>{
+            console.log(bgMagenta(`password 3 Done took ${Date.now() - start}s`))
+          })
+    
+          crypto.pbkdf2('mypassword4','mysalt1',100000,1024,'sha512',()=>{
+            console.log(bgRedBright(`password 4 Done took ${Date.now() - start}s`))
+          })
+        //    Adding one more cpu intensive 
+        // Thread pool has 4 threads so lets see what happens with 5th work
+        // this has to wait
+        crypto.pbkdf2('mypassword5','mysalt1',100000,1024,'sha512',()=>{
+            console.log(bgGreen(`password 5 Done took ${Date.now() - start}s`))
+          })
+      });
+    console.log(red("Hi Top Level Code"));
+
+### Output
++ So first top level code executes
++ Then we have a setTimeout of 0s and setImmediate and readingFile functions
++ So According to Event Loop first expired Timers are run first
++ So SetTimeout 1 runs first
++ then IO polling happens that is reading of file
++ so console.log(IO Polling ) is printed
++ now as readFile has 4 setTimeout 1 setImmediate and 5 CPU intensive work
++ so as we know if setImmediate is bounded inside IO polling that is read file then setImmediate runs first than setTimeout of 0s
++ so after setImmediate setTime of 0s runs
++ then setTimeout of 1s
++ then setTimeout of 2s
++ Now as setTime of 5s has not expired yet so 4 CPU work will execute as they get each thread
++ 5th CPU process does not get Thread as it is not available so it waits
++ till then event loop sees are there any pending expired timers
++ Yes we have setTimeout of 5s as it expires
++ so it gets printed
++ then our 5th CPU work will get thread and executes
++ Done
+
+
+![image](https://github.com/aditimahabole/understand_nodeJs/assets/78752342/1519d9b7-ab82-40f0-bb70-b23ba54e9634)
+
+# Code 12
+    // Top Level code
+    // Modules are required 
+    // Event callbacks are registered
+    // Then Event Loop Runs 
+    // ------Inside Event Loop----
+    // First Expired setTimeouts are run 
+    // then IO polling runs 
+    // then setImmediate callbacks run
+    // then close callbacks run 
+    // event loop checks is there any pending function left
+    // If yes then it executes them else it exits
+    const fs = require("fs");
+    const crypto = require("crypto");
+    const {
+      red,
+      blue,
+      green,
+      yellow,
+      magenta,
+      cyan,
+      greenBright,
+      yellowBright,
+      bgYellowBright,
+      bgBlue,
+      bgCyan,
+      bgGreenBright,
+      bgRedBright,
+      bgMagenta,
+      bgGreen,
+    } = require("colorette");
+    const start = Date.now();
+    // setTimeouts , setImmediate , IO polling are registered into Event Loop 
+    setTimeout(() => console.log(green("Hi from SetTimeout 1 0s")), 0);
+    setImmediate(() => console.log(blue("Hey setImmediate 1 function here")));
+    fs.readFile("sample.txt", "utf-8", () => {
+      console.log(yellow("IO Polling Finished"));
+      // this will run after setImmediate because in event loop in IO polling
+      // first setImmediate works then setTimeout of 0s works
+      setTimeout(() => {
+        console.log(magenta("Hi from SetTimeout 2 inside Readfile 1s"));
+      }, 1000);
+      setTimeout(() => {
+        console.log(cyan("Hi from SetTimeout 3 inside Readfile 2s"));
+      }, 2000);
+      setTimeout(() => {
+        console.log(yellow("Hi from SetTimeout 5 inside Readfile 5s"));
+      }, 5000);
+      setTimeout(() => {
+        console.log(magenta("Hi from SetTimeout 6 inside Readfile 10s"));
+      }, 10000);
+      setTimeout(() => {
+        console.log(yellowBright("Hi from SetTimeout 4 inside Readfile 0s"));
+      }, 0);
+      // Executed first as it is inside IO polling
+      setImmediate(() =>
+        console.log(greenBright("Hi from SetImmediate 2 inside Readfile"))
+      );
+    
+      // CPU intensive work to show Threading work
+      // Performed in Thread Pool
+      crypto.pbkdf2("mypassword1", "mysalt1", 100000, 1024, "sha512", () => {
+        console.log(bgYellowBright(`password 1 Done took ${Date.now() - start}s`));
+      });
+    
+      crypto.pbkdf2("mypassword2", "mysalt1", 100000, 1024, "sha512", () => {
+        console.log(bgBlue(`password 2 Done took ${Date.now() - start}s`));
+      });
+    
+      crypto.pbkdf2("mypassword3", "mysalt1", 100000, 1024, "sha512", () => {
+        console.log(bgMagenta(`password 3 Done took ${Date.now() - start}s`));
+      });
+    
+      crypto.pbkdf2("mypassword4", "mysalt1", 100000, 1024, "sha512", () => {
+        console.log(bgRedBright(`password 4 Done took ${Date.now() - start}s`));
+      });
+      // Adding one more cpu intensive
+      // Thread pool has 4 threads so lets see what happens with 5th work
+      // This process has to wait
+      crypto.pbkdf2("mypassword5", "mysalt1", 100000, 1024, "sha512", () => {
+        console.log(bgGreen(`password 5 Done took ${Date.now() - start}s`));
+      });
+    });
+    // Top Level Code executes first always 
+    console.log(red("Hi Top Level Code"));
+
+
+### Output
+
+![image](https://github.com/aditimahabole/understand_nodeJs/assets/78752342/636626c3-a43d-4200-8a24-7c4c58edd4c5)
+
+# Code 13 
+
+    // Top Level code
+    // Modules are required 
+    // Event callbacks are registered
+    // Then Event Loop Runs 
+    // ------Inside Event Loop----
+    // First Expired setTimeouts are run 
+    // then IO polling runs 
+    // then setImmediate callbacks run
+    // then close callbacks run 
+    // event loop checks is there any pending function left
+    // If yes then it executes them else it exits
+    const fs = require("fs");
+    const crypto = require("crypto");
+    const {
+      red,
+      blue,
+      green,
+      yellow,
+      magenta,
+      cyan,
+      greenBright,
+      yellowBright,
+      bgYellowBright,
+      bgBlue,
+      bgCyan,
+      bgGreenBright,
+      bgRedBright,
+      bgMagenta,
+      bgGreen,
+    } = require("colorette");
+    const start = Date.now();
+    process.env.UV_THREADPOOL_SIZE = 10
+    // setTimeouts , setImmediate , IO polling are registered into Event Loop 
+    setTimeout(() => console.log(green("Hi from SetTimeout 1 0s")), 0);
+    setImmediate(() => console.log(blue("Hey setImmediate 1 function here")));
+    fs.readFile("sample.txt", "utf-8", () => {
+      console.log(yellow("IO Polling Finished"));
+      // this will run after setImmediate because in event loop in IO polling
+      // first setImmediate works then setTimeout of 0s works
+      setTimeout(() => {
+        console.log(magenta("Hi from SetTimeout 2 inside Readfile 1s"));
+      }, 1000);
+      setTimeout(() => {
+        console.log(cyan("Hi from SetTimeout 3 inside Readfile 2s"));
+      }, 2000);
+      setTimeout(() => {
+        console.log(yellow("Hi from SetTimeout 5 inside Readfile 5s"));
+      }, 5000);
+      setTimeout(() => {
+        console.log(magenta("Hi from SetTimeout 6 inside Readfile 10s"));
+      }, 10000);
+      setTimeout(() => {
+        console.log(yellowBright("Hi from SetTimeout 4 inside Readfile 0s"));
+      }, 0);
+      // Executed first as it is inside IO polling
+      setImmediate(() =>
+        console.log(greenBright("Hi from SetImmediate 2 inside Readfile"))
+      );
+    
+      // CPU intensive work to show Threading work
+      // Performed in Thread Pool
+      crypto.pbkdf2("mypassword1", "mysalt1", 100000, 1024, "sha512", () => {
+        console.log(bgYellowBright(`password 1 Done took ${Date.now() - start}s`));
+      });
+    
+      crypto.pbkdf2("mypassword2", "mysalt1", 100000, 1024, "sha512", () => {
+        console.log(bgBlue(`password 2 Done took ${Date.now() - start}s`));
+      });
+    
+      crypto.pbkdf2("mypassword3", "mysalt1", 100000, 1024, "sha512", () => {
+        console.log(bgMagenta(`password 3 Done took ${Date.now() - start}s`));
+      });
+    
+      crypto.pbkdf2("mypassword4", "mysalt1", 100000, 1024, "sha512", () => {
+        console.log(bgRedBright(`password 4 Done took ${Date.now() - start}s`));
+      });
+      // Adding one more cpu intensive
+      // Thread pool has 4 threads so lets see what happens with 5th work
+      // This process has to wait
+      crypto.pbkdf2("mypassword5", "mysalt1", 100000, 1024, "sha512", () => {
+        console.log(bgGreen(`password 5 Done took ${Date.now() - start}s`));
+      });
+    });
+    // Top Level Code executes first always 
+    console.log(red("Hi Top Level Code"));
+
+
+### Output
++ In this code I have increased number of threads by process.env.UV_THREADPOOL_SIZE = 10
++ So we have 10 threads so all 5 processes are executed at same time concurrently
++ and suppose if we make process.env.UV_THREADPOOL_SIZE = 2 then first two CPU intensive will evecute
++ then next two
++ then next tow
++ Done
+
+![image](https://github.com/aditimahabole/understand_nodeJs/assets/78752342/ef6e9cf7-63e7-4195-b675-df4f36c8e946)
+
+
+
+
+
+
 
 
 
